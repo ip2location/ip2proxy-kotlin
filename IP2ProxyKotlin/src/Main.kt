@@ -20,12 +20,9 @@ object Main {
             val `as`: String?
             val lastSeen: String?
             val threat: String?
+            val provider: String?
             val ip = "221.121.146.0"
-            if (proxy.open(
-                    "C:/mydata/IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL.BIN",
-                    IP2Proxy.IOModes.IP2PROXY_MEMORY_MAPPED
-                ) == 0
-            ) {
+            if (proxy.open("./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER.BIN", IP2Proxy.IOModes.IP2PROXY_MEMORY_MAPPED) == 0) {
                 println("GetModuleVersion: " + proxy.getModuleVersion())
                 println("GetPackageVersion: " + proxy.getPackageVersion())
                 println("GetDatabaseVersion: " + proxy.getDatabaseVersion())
@@ -45,6 +42,7 @@ object Main {
                 println("`as`: " + all.`as`)
                 println("lastSeen: " + all.lastSeen)
                 println("threat: " + all.threat)
+                println("provider: " + all.provider)
 
                 // reading individual fields
                 isProxy = proxy.isProxy(ip)
@@ -73,6 +71,8 @@ object Main {
                 println("LastSeen: $lastSeen")
                 threat = proxy.getThreat(ip)
                 println("threat: $threat")
+                provider = proxy.getProvider(ip)
+                println("provider: $provider")
             } else {
                 println("Error reading BIN file.")
             }

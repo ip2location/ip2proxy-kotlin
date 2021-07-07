@@ -15,7 +15,7 @@ Below are the methods supported in this class.
 |---|---|
 |open|Open the IP2Proxy BIN data for lookup. Please see the **Usage** section of the 2 modes supported to load the BIN data file.|
 |close|Close and clean up the file pointer.|
-|getPackageVersion|Get the package version (1 to 10 for PX1 to PX10 respectively).|
+|getPackageVersion|Get the package version (1 to 11 for PX1 to PX11 respectively).|
 |getModuleVersion|Get the module version.|
 |getDatabaseVersion|Get the database version.|
 |isProxy|Check whether if an IP address was a proxy. Returned value:<ul><li>-1 : errors</li><li>0 : not a proxy</li><li>1 : a proxy</li><li>2 : a data center IP address or search engine robot</li></ul>|
@@ -32,6 +32,7 @@ Below are the methods supported in this class.
 |getAS|Return the autonomous system name of the proxy.|
 |getLastSeen|Return the number of days that the proxy was last seen.|
 |getThreat|Return the threat type of the proxy.|
+|getProvider|Return the provider of the proxy.|
 
 ## Usage
 
@@ -63,8 +64,9 @@ object Main {
             val `as`: String?
             val lastSeen: String?
             val threat: String?
+            val provider: String?
             val ip = "221.121.146.0"
-            if (proxy.open("C:/mydata/IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL.BIN", IP2Proxy.IOModes.IP2PROXY_MEMORY_MAPPED) == 0) {
+            if (proxy.open("./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER.BIN", IP2Proxy.IOModes.IP2PROXY_MEMORY_MAPPED) == 0) {
                 println("GetModuleVersion: " + proxy.getModuleVersion())
                 println("GetPackageVersion: " + proxy.getPackageVersion())
                 println("GetDatabaseVersion: " + proxy.getDatabaseVersion())
@@ -84,6 +86,7 @@ object Main {
                 println("`as`: " + all.`as`)
                 println("lastSeen: " + all.lastSeen)
                 println("threat: " + all.threat)
+                println("provider: " + all.provider)
 
                 // reading individual fields
                 isProxy = proxy.isProxy(ip)
@@ -112,6 +115,8 @@ object Main {
                 println("LastSeen: $lastSeen")
                 threat = proxy.getThreat(ip)
                 println("threat: $threat")
+                provider = proxy.getProvider(ip)
+                println("provider: $provider")
             } else {
                 println("Error reading BIN file.")
             }

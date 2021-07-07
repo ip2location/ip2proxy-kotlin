@@ -11,6 +11,7 @@ import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
+import java.util.*
 import java.util.regex.Pattern
 
 class IP2Proxy {
@@ -19,7 +20,7 @@ class IP2Proxy {
     }
 
     enum class Modes {
-        COUNTRY_SHORT, COUNTRY_LONG, REGION, CITY, ISP, PROXY_TYPE, IS_PROXY, DOMAIN, USAGE_TYPE, ASN, AS, LAST_SEEN, THREAT, ALL
+        COUNTRY_SHORT, COUNTRY_LONG, REGION, CITY, ISP, PROXY_TYPE, IS_PROXY, DOMAIN, USAGE_TYPE, ASN, AS, LAST_SEEN, THREAT, PROVIDER, ALL
     }
 
     private var ipV4Buffer: MappedByteBuffer? = null
@@ -43,6 +44,10 @@ class IP2Proxy {
     private var dbCountIPV6 = 0
     private var indexBaseAddr = 0
     private var indexBaseAddrIPV6 = 0
+    private var productCode = 0
+    // private var productType = 0
+    // private var fileSize = 0
+    
     private var useMemoryMappedFile = false
     private var ipDatabasePath = ""
     private var countryPositionOffset = 0
@@ -56,6 +61,7 @@ class IP2Proxy {
     private var asPositionOffset = 0
     private var lastSeenPositionOffset = 0
     private var threatPositionOffset = 0
+    private var providerPositionOffset = 0
     private var countryEnabled = false
     private var regionEnabled = false
     private var cityEnabled = false
@@ -67,6 +73,7 @@ class IP2Proxy {
     private var asEnabled = false
     private var lastSeenEnabled = false
     private var threatEnabled = false
+    private var providerEnabled = false
 
     /**
      * This function returns the module version.
@@ -227,6 +234,16 @@ class IP2Proxy {
     }
 
     /**
+     * This function returns the provider of the proxy.
+     * @param IP IP Address you wish to query
+     * @return provider of the proxy
+     */
+    @Throws(IOException::class)
+    fun getProvider(IP: String?): String? {
+        return proxyQuery(IP, Modes.PROVIDER).provider
+    }
+
+    /**
      * This function returns proxy result.
      * @param IP IP Address you wish to query
      * @return Proxy result
@@ -252,19 +269,16 @@ class IP2Proxy {
         dbCountIPV6 = 0
         indexBaseAddr = 0
         indexBaseAddrIPV6 = 0
+        productCode = 0
+        // productType = 0
+        // fileSize = 0
         return 0
     }
 
     private fun destroyMappedBytes() {
-        if (ipV4Buffer != null) {
-            ipV4Buffer = null
-        }
-        if (ipV6Buffer != null) {
-            ipV6Buffer = null
-        }
-        if (mapDataBuffer != null) {
-            mapDataBuffer = null
-        }
+        ipV4Buffer = null
+        ipV6Buffer = null
+        mapDataBuffer = null
     }
 
     @Throws(IOException::class)
@@ -297,7 +311,7 @@ class IP2Proxy {
         }
         if (mapDataBuffer == null) {
             mapDataBuffer =
-                inChannel.map(FileChannel.MapMode.READ_ONLY, mapDataOffset, inChannel.size() - mapDataOffset)
+                    inChannel.map(FileChannel.MapMode.READ_ONLY, mapDataOffset, inChannel.size() - mapDataOffset)
             mapDataBuffer?.order(ByteOrder.LITTLE_ENDIAN)
         }
     }
@@ -323,23 +337,33 @@ class IP2Proxy {
                 baseAddrIPV6 = headerBuffer.getInt(17) // 4 bytes
                 indexBaseAddr = headerBuffer.getInt(21) //4 bytes
                 indexBaseAddrIPV6 = headerBuffer.getInt(25) //4 bytes
+                productCode = headerBuffer[29].toInt()
+                // productType = headerBuffer[30].toInt()
+                // fileSize = headerBuffer.getInt(31) //4 bytes
+
+                // check if is correct BIN (should be 2 for IP2Proxy BIN file), also checking for zipped file (PK being the first 2 chars)
+                if ((productCode != 2 && dbYear >= 21) || (dbType == 80 && dbColumn == 75)) { // only BINs from Jan 2021 onwards have this byte set
+                    throw IOException("Incorrect IP2Proxy BIN file format. Please make sure that you are using the latest IP2Proxy BIN file.")
+                }
+
                 ipV4ColumnSize = dbColumn shl 2 // 4 bytes each column
                 ipV6ColumnSize =
-                    16 + (dbColumn - 1 shl 2) // 4 bytes each column, except IPFrom column which is 16 bytes
+                        16 + (dbColumn - 1 shl 2) // 4 bytes each column, except IPFrom column which is 16 bytes
 
                 countryPositionOffset = if (COUNTRY_POSITION[dbType] != 0) COUNTRY_POSITION[dbType] - 2 shl 2 else 0
                 regionPositionOffset = if (REGION_POSITION[dbType] != 0) REGION_POSITION[dbType] - 2 shl 2 else 0
                 cityPositionOffset = if (CITY_POSITION[dbType] != 0) CITY_POSITION[dbType] - 2 shl 2 else 0
                 iSPPositionOffset = if (ISP_POSITION[dbType] != 0) ISP_POSITION[dbType] - 2 shl 2 else 0
                 proxyTypePositionOffset =
-                    if (PROXYTYPE_POSITION[dbType] != 0) PROXYTYPE_POSITION[dbType] - 2 shl 2 else 0
+                        if (PROXYTYPE_POSITION[dbType] != 0) PROXYTYPE_POSITION[dbType] - 2 shl 2 else 0
                 domainPositionOffset = if (DOMAIN_POSITION[dbType] != 0) DOMAIN_POSITION[dbType] - 2 shl 2 else 0
                 usageTypePositionOffset =
-                    if (USAGETYPE_POSITION[dbType] != 0) USAGETYPE_POSITION[dbType] - 2 shl 2 else 0
+                        if (USAGETYPE_POSITION[dbType] != 0) USAGETYPE_POSITION[dbType] - 2 shl 2 else 0
                 aSNPositionOffset = if (ASN_POSITION[dbType] != 0) ASN_POSITION[dbType] - 2 shl 2 else 0
                 asPositionOffset = if (AS_POSITION[dbType] != 0) AS_POSITION[dbType] - 2 shl 2 else 0
                 lastSeenPositionOffset = if (LASTSEEN_POSITION[dbType] != 0) LASTSEEN_POSITION[dbType] - 2 shl 2 else 0
                 threatPositionOffset = if (THREAT_POSITION[dbType] != 0) THREAT_POSITION[dbType] - 2 shl 2 else 0
+                providerPositionOffset = if (PROVIDER_POSITION[dbType] != 0) PROVIDER_POSITION[dbType] - 2 shl 2 else 0
                 countryEnabled = COUNTRY_POSITION[dbType] != 0
                 regionEnabled = REGION_POSITION[dbType] != 0
                 cityEnabled = CITY_POSITION[dbType] != 0
@@ -351,11 +375,12 @@ class IP2Proxy {
                 asEnabled = AS_POSITION[dbType] != 0
                 lastSeenEnabled = LASTSEEN_POSITION[dbType] != 0
                 threatEnabled = THREAT_POSITION[dbType] != 0
+                providerEnabled = PROVIDER_POSITION[dbType] != 0
                 val indexBuffer = inChannel.map(
-                    FileChannel.MapMode.READ_ONLY,
-                    (indexBaseAddr - 1).toLong(),
-                    (baseAddr - indexBaseAddr).toLong()
-                ) // reading indexes
+                        FileChannel.MapMode.READ_ONLY,
+                        (indexBaseAddr - 1).toLong(),
+                        (baseAddr - indexBaseAddr).toLong()
+                )
                 indexBuffer.order(ByteOrder.LITTLE_ENDIAN)
                 var pointer = 0
 
@@ -442,6 +467,7 @@ class IP2Proxy {
                 result.`as` = MSG_INVALID_IP
                 result.lastSeen = MSG_INVALID_IP
                 result.threat = MSG_INVALID_IP
+                result.provider = MSG_INVALID_IP
                 return result
             }
             var ipNo: BigInteger
@@ -480,6 +506,7 @@ class IP2Proxy {
                 result.`as` = MSG_INVALID_IP
                 result.lastSeen = MSG_INVALID_IP
                 result.threat = MSG_INVALID_IP
+                result.provider = MSG_INVALID_IP
                 return result
             }
             var pos: Long = 0
@@ -505,6 +532,7 @@ class IP2Proxy {
                     result.`as` = MSG_MISSING_FILE
                     result.lastSeen = MSG_MISSING_FILE
                     result.threat = MSG_MISSING_FILE
+                    result.provider = MSG_MISSING_FILE
                     return result
                 }
             }
@@ -520,7 +548,7 @@ class IP2Proxy {
                 maxIPRange = MAX_IPV4_RANGE
                 if (useMemoryMappedFile) {
                     buf =
-                        ipV4Buffer!!.duplicate() // this enables this thread to maintain its own position in a multi-threaded environment
+                            ipV4Buffer!!.duplicate() // this enables this thread to maintain its own position in a multi-threaded environment
                     buf.order(ByteOrder.LITTLE_ENDIAN)
                     bufCapacity = buf.capacity()
                 } else {
@@ -545,13 +573,14 @@ class IP2Proxy {
                     result.`as` = MSG_IPV6_UNSUPPORTED
                     result.lastSeen = MSG_IPV6_UNSUPPORTED
                     result.threat = MSG_IPV6_UNSUPPORTED
+                    result.provider = MSG_IPV6_UNSUPPORTED
                     return result
                 }
                 maxIPRange = MAX_IPV6_RANGE
                 high = dbCountIPV6.toLong()
                 if (useMemoryMappedFile) {
                     buf =
-                        ipV6Buffer!!.duplicate() // this enables this thread to maintain its own position in a multi-threaded environment
+                            ipV6Buffer!!.duplicate() // this enables this thread to maintain its own position in a multi-threaded environment
                     buf.order(ByteOrder.LITTLE_ENDIAN)
                     bufCapacity = buf.capacity()
                 } else {
@@ -588,6 +617,7 @@ class IP2Proxy {
                     var `as`: String? = MSG_NOT_SUPPORTED
                     var lastSeen: String? = MSG_NOT_SUPPORTED
                     var threat: String? = MSG_NOT_SUPPORTED
+                    var provider: String? = MSG_NOT_SUPPORTED
                     var firstCol = 4 // IP From is 4 bytes
                     if (ipType == 6) { // IPv6
                         firstCol = 16 // IPv6 is 16 bytes
@@ -598,7 +628,7 @@ class IP2Proxy {
                     val row: ByteArray = readRow(rowOffset + firstCol, rowLen.toLong(), buf, rF)
                     if (useMemoryMappedFile) {
                         dataBuf =
-                            mapDataBuffer!!.duplicate() // this is to enable reading of a range of bytes in multi-threaded environment
+                                mapDataBuffer!!.duplicate() // this is to enable reading of a range of bytes in multi-threaded environment
                         dataBuf.order(ByteOrder.LITTLE_ENDIAN)
                     }
                     if (proxyTypeEnabled) {
@@ -662,6 +692,11 @@ class IP2Proxy {
                             threat = readStr(read32Row(row, threatPositionOffset).toLong(), dataBuf, rF)
                         }
                     }
+                    if (providerEnabled) {
+                        if (Mode == Modes.ALL || Mode == Modes.PROVIDER) {
+                            provider = readStr(read32Row(row, providerPositionOffset).toLong(), dataBuf, rF)
+                        }
+                    }
                     isProxy = if (countryShort == "-" || proxyType == "-") {
                         0
                     } else {
@@ -684,6 +719,7 @@ class IP2Proxy {
                     result.`as` = `as`
                     result.lastSeen = lastSeen
                     result.threat = threat
+                    result.provider = provider
                     return result
                 } else {
                     if (ipNo < ipFrom) {
@@ -706,6 +742,7 @@ class IP2Proxy {
             result.`as` = MSG_INVALID_IP
             result.lastSeen = MSG_INVALID_IP
             result.threat = MSG_INVALID_IP
+            result.provider = MSG_INVALID_IP
             result
         } finally {
             rF?.close()
@@ -716,7 +753,7 @@ class IP2Proxy {
         val tmp = "0000:0000:0000:0000:0000:"
         val padMe = "0000"
         val hexOffset: Long = 0xFF
-        var ip2 = IP.toUpperCase()
+        var ip2 = IP.uppercase(Locale.getDefault())
         var retType = IPType.toString()
         if (IPType == 4) {
             if (Pattern4.matcher(ip2).matches()) {
@@ -726,8 +763,8 @@ class IP2Proxy {
                 if (mat.matches()) {
                     val match = mat.group(1)
                     val arr =
-                        match.replace("^:+".toRegex(), "").replace(":+$".toRegex(), "").split(":".toRegex())
-                            .toTypedArray()
+                            match.replace("^:+".toRegex(), "").replace(":+$".toRegex(), "").split(":".toRegex())
+                                    .toTypedArray()
                     val len = arr.size
                     val bf = StringBuilder(32)
                     for (x in 0 until len) {
@@ -736,14 +773,14 @@ class IP2Proxy {
                     }
                     var tmp2 = BigInteger(bf.toString(), 16).toLong()
                     val bytes =
-                        longArrayOf(0, 0, 0, 0) // using long in place of bytes due to 2's complement signed issue
+                            longArrayOf(0, 0, 0, 0) // using long in place of bytes due to 2's complement signed issue
                     for (x in 0..3) {
                         bytes[x] = tmp2 and hexOffset
                         tmp2 = tmp2 shr 8
                     }
                     ip2 = ip2.replace(
-                        match + "$".toRegex(),
-                        ":" + bytes[3] + "." + bytes[2] + "." + bytes[1] + "." + bytes[0]
+                            match + "$".toRegex(),
+                            ":" + bytes[3] + "." + bytes[2] + "." + bytes[1] + "." + bytes[0]
                     )
                     ip2 = ip2.replace("::".toRegex(), tmp)
                 }
@@ -826,8 +863,8 @@ class IP2Proxy {
                     if (mat2.matches()) {
                         val match = mat2.group(1)
                         val arr =
-                            match.replace("^:+".toRegex(), "").replace(":+$".toRegex(), "").split(":".toRegex())
-                                .toTypedArray()
+                                match.replace("^:+".toRegex(), "").replace(":+$".toRegex(), "").split(":".toRegex())
+                                        .toTypedArray()
                         val len = arr.size
                         val bf = StringBuilder(32)
                         for (x in 0 until len) {
@@ -836,18 +873,18 @@ class IP2Proxy {
                         }
                         var tmp2 = BigInteger(bf.toString(), 16).toLong()
                         val bytes = longArrayOf(
-                            0,
-                            0,
-                            0,
-                            0
+                                0,
+                                0,
+                                0,
+                                0
                         ) // using long in place of bytes due to 2's complement signed issue
                         for (x in 0..3) {
                             bytes[x] = tmp2 and hexOffset
                             tmp2 = tmp2 shr 8
                         }
                         ip2 = ip2.replace(
-                            match + "$".toRegex(),
-                            ":" + bytes[3] + "." + bytes[2] + "." + bytes[1] + "." + bytes[0]
+                                match + "$".toRegex(),
+                                ":" + bytes[3] + "." + bytes[2] + "." + bytes[1] + "." + bytes[0]
                         )
                         ip2 = ip2.replace("::".toRegex(), tmp + "FFFF:")
                         retType = "4"
@@ -869,7 +906,7 @@ class IP2Proxy {
                         }
                         if (arr.size > 1) {
                             val rightSide =
-                                arr[1].split(":".toRegex()).toTypedArray()
+                                    arr[1].split(":".toRegex()).toTypedArray()
                             len = rightSide.size
                             for (x in 0 until len) {
                                 if (rightSide[x].isNotEmpty()) {
@@ -928,7 +965,7 @@ class IP2Proxy {
         if (ipType == 4) {
             return read32(position, buf, rH)
         } else if (ipType == 6) {
-            return read128(position, buf, rH) // only IPv6 will run this
+            return read128(position, buf, rH)
         }
         return BigInteger.ZERO
     }
@@ -964,7 +1001,7 @@ class IP2Proxy {
         return if (useMemoryMappedFile) {
             // simulate unsigned int by using long
             BigInteger.valueOf(
-                buf!!.getInt(position.toInt()).toLong() and 0xffffffffL
+                    buf!!.getInt(position.toInt()).toLong() and 0xffffffffL
             ) // use absolute offset to be thread-safe
         } else {
             val bSize = 4
@@ -1014,7 +1051,7 @@ class IP2Proxy {
             a1 = BigInteger("4")
             a2 = BigInteger(ipV4No(IP).toString())
         } else if (Pattern2.matcher(IP).matches() || Pattern3.matcher(IP)
-                .matches() || Pattern7.matcher(IP).matches()
+                        .matches() || Pattern7.matcher(IP).matches()
         ) {
             throw UnknownHostException()
         } else {
@@ -1059,9 +1096,9 @@ class IP2Proxy {
 
     companion object {
         private val Pattern1 =
-            Pattern.compile("^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$") // IPv4
+                Pattern.compile("^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$") // IPv4
         private val Pattern2 =
-            Pattern.compile("^([0-9A-F]{1,4}:){6}(0[0-9]+\\.|.*?\\.0[0-9]+).*$", Pattern.CASE_INSENSITIVE)
+                Pattern.compile("^([0-9A-F]{1,4}:){6}(0[0-9]+\\.|.*?\\.0[0-9]+).*$", Pattern.CASE_INSENSITIVE)
         private val Pattern3 = Pattern.compile("^[0-9]+$")
         private val Pattern4 = Pattern.compile("^(.*:)(([0-9]+\\.){3}[0-9]+)$")
         private val Pattern5 = Pattern.compile("^.*((:[0-9A-F]{1,4}){2})$")
@@ -1078,17 +1115,18 @@ class IP2Proxy {
         private const val MSG_INVALID_IP = "INVALID IP ADDRESS"
         private const val MSG_MISSING_FILE = "MISSING FILE"
         private const val MSG_IPV6_UNSUPPORTED = "IPV6 ADDRESS MISSING IN IPV4 BIN"
-        private val COUNTRY_POSITION = intArrayOf(0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3)
-        private val REGION_POSITION = intArrayOf(0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4)
-        private val CITY_POSITION = intArrayOf(0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5)
-        private val ISP_POSITION = intArrayOf(0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6)
-        private val PROXYTYPE_POSITION = intArrayOf(0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2)
-        private val DOMAIN_POSITION = intArrayOf(0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7)
-        private val USAGETYPE_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8)
-        private val ASN_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9)
-        private val AS_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10)
-        private val LASTSEEN_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11)
-        private val THREAT_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12)
-        private const val ModuleVersion = "3.0.0"
+        private val COUNTRY_POSITION = intArrayOf(0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3)
+        private val REGION_POSITION = intArrayOf(0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4)
+        private val CITY_POSITION = intArrayOf(0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5)
+        private val ISP_POSITION = intArrayOf(0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6)
+        private val PROXYTYPE_POSITION = intArrayOf(0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
+        private val DOMAIN_POSITION = intArrayOf(0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7)
+        private val USAGETYPE_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8)
+        private val ASN_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9)
+        private val AS_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10)
+        private val LASTSEEN_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11)
+        private val THREAT_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12)
+        private val PROVIDER_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13)
+        private const val ModuleVersion = "3.1.0"
     }
 }
