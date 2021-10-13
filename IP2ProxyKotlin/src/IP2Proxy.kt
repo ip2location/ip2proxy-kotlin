@@ -1127,6 +1127,6 @@ class IP2Proxy {
         private val LASTSEEN_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11)
         private val THREAT_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12)
         private val PROVIDER_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13)
-        private const val ModuleVersion = "3.1.0"
+        private const val ModuleVersion = "3.2.0"
     }
 }

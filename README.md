@@ -5,11 +5,17 @@ This module allows user to query an IP address if it was being used as VPN anony
 * Free IP2Proxy BIN Data: https://lite.ip2location.com
 * Commercial IP2Proxy BIN Data: https://www.ip2location.com/database/ip2proxy
 
+As an alternative, this module can also call the IP2Proxy Web Service. This requires an API key. If you don't have an existing API key, you can subscribe for one at the below:
+
+https://www.ip2location.com/web-service/ip2proxy
+
 ## Requirements ##
 Intellij IDEA: https://www.jetbrains.com/idea/
 
+## QUERY USING THE BIN FILE
+
 ## Methods
-Below are the methods supported in this class.
+Below are the methods supported in this module.
 
 |Method Name|Description|
 |---|---|
@@ -128,3 +134,89 @@ object Main {
 }
 ```
 
+## QUERY USING THE IP2PROXY PROXY DETECTION WEB SERVICE
+
+## Methods
+Below are the methods supported in this module.
+
+|Method Name|Description|
+|---|---|
+|open| Expects 3 input parameters:<ol><li>IP2Proxy API Key.</li><li>Package (PX1 - PX11)</li></li><li>Use HTTPS or HTTP</li></ol> |
+|ipQuery|Query IP address. This method returns a JsonObject containing the proxy info. <ul><li>countryCode</li><li>countryName</li><li>regionName</li><li>cityName</li><li>isp</li><li>domain</li><li>usageType</li><li>asn</li><li>as</li><li>lastSeen</li><li>threat</li><li>proxyType</li><li>isProxy</li><li>provider</li><ul>|
+|getCredit|This method returns the web service credit balance in a JsonObject.|
+
+## Usage
+
+```kotlin
+import kotlin.jvm.JvmStatic
+import java.lang.Exception
+
+object Main {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        try {
+            val ws = IP2ProxyWebService()
+
+            val strIPAddress = "37.252.228.50"
+            val strAPIKey = "YOUR_API_KEY"
+            val strPackage = "PX11"
+            val boolSSL = true
+
+            ws.open(strAPIKey, strPackage, boolSSL)
+
+            var myResult = ws.ipQuery(strIPAddress)
+
+            if (myResult.get("response") != null && myResult.get("response").asString.equals("OK")) {
+                println(
+                    "countryCode: " + if (myResult.get("countryCode") != null) myResult.get("countryCode")
+                        .asString else ""
+                )
+                println(
+                    "countryName: " + if (myResult.get("countryName") != null) myResult.get("countryName")
+                        .asString else ""
+                )
+                println(
+                    "regionName: " + if (myResult.get("regionName") != null) myResult.get("regionName")
+                        .asString else ""
+                )
+                println(
+                    "cityName: " + if (myResult.get("cityName") != null) myResult.get("cityName").asString else ""
+                )
+                println("isp: " + if (myResult.get("isp") != null) myResult.get("isp").asString else "")
+                println("domain: " + if (myResult.get("domain") != null) myResult.get("domain").asString else "")
+                println(
+                    "usageType: " + if (myResult.get("usageType") != null) myResult.get("usageType")
+                        .asString else ""
+                )
+                println("asn: " + if (myResult.get("asn") != null) myResult.get("asn").asString else "")
+                println("as: " + if (myResult.get("as") != null) myResult.get("as").asString else "")
+                println(
+                    "lastSeen: " + if (myResult.get("lastSeen") != null) myResult.get("lastSeen").asString else ""
+                )
+                println(
+                    "proxyType: " + if (myResult.get("proxyType") != null) myResult.get("proxyType")
+                        .asString else ""
+                )
+                println("threat: " + if (myResult.get("threat") != null) myResult.get("threat").asString else "")
+                println(
+                    "isProxy: " + if (myResult.get("isProxy") != null) myResult.get("isProxy").asString else ""
+                )
+                println(
+                    "provider: " + if (myResult.get("provider") != null) myResult.get("provider").asString else ""
+                )
+            } else if (myResult.get("response") != null) {
+                println("Error: " + myResult.get("response").asString);
+            }
+
+            myResult = ws.getCredit();
+
+            if (myResult.get("response") != null) {
+                println("Credit balance: " + myResult.get("response").asString);
+            }
+        } catch (Ex: Exception) {
+            println(Ex)
+        }
+    }
+}
+
+```

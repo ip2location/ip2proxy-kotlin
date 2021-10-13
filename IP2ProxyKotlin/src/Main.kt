@@ -22,7 +22,11 @@ object Main {
             val threat: String?
             val provider: String?
             val ip = "221.121.146.0"
-            if (proxy.open("./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER.BIN", IP2Proxy.IOModes.IP2PROXY_MEMORY_MAPPED) == 0) {
+            if (proxy.open(
+                    "./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER.BIN",
+                    IP2Proxy.IOModes.IP2PROXY_MEMORY_MAPPED
+                ) == 0
+            ) {
                 println("GetModuleVersion: " + proxy.getModuleVersion())
                 println("GetPackageVersion: " + proxy.getPackageVersion())
                 println("GetDatabaseVersion: " + proxy.getDatabaseVersion())
@@ -77,6 +81,70 @@ object Main {
                 println("Error reading BIN file.")
             }
             proxy.close()
+        } catch (Ex: Exception) {
+            println(Ex)
+        }
+
+        println("==============================================================================")
+        try {
+            val ws = IP2ProxyWebService()
+
+            val strIPAddress = "37.252.228.50"
+            val strAPIKey = "YOUR_API_KEY"
+            val strPackage = "PX11"
+            val boolSSL = true
+
+            ws.open(strAPIKey, strPackage, boolSSL)
+
+            var myResult = ws.ipQuery(strIPAddress)
+
+            if (myResult.get("response") != null && myResult.get("response").asString.equals("OK")) {
+                println(
+                    "countryCode: " + if (myResult.get("countryCode") != null) myResult.get("countryCode")
+                        .asString else ""
+                )
+                println(
+                    "countryName: " + if (myResult.get("countryName") != null) myResult.get("countryName")
+                        .asString else ""
+                )
+                println(
+                    "regionName: " + if (myResult.get("regionName") != null) myResult.get("regionName")
+                        .asString else ""
+                )
+                println(
+                    "cityName: " + if (myResult.get("cityName") != null) myResult.get("cityName").asString else ""
+                )
+                println("isp: " + if (myResult.get("isp") != null) myResult.get("isp").asString else "")
+                println("domain: " + if (myResult.get("domain") != null) myResult.get("domain").asString else "")
+                println(
+                    "usageType: " + if (myResult.get("usageType") != null) myResult.get("usageType")
+                        .asString else ""
+                )
+                println("asn: " + if (myResult.get("asn") != null) myResult.get("asn").asString else "")
+                println("as: " + if (myResult.get("as") != null) myResult.get("as").asString else "")
+                println(
+                    "lastSeen: " + if (myResult.get("lastSeen") != null) myResult.get("lastSeen").asString else ""
+                )
+                println(
+                    "proxyType: " + if (myResult.get("proxyType") != null) myResult.get("proxyType")
+                        .asString else ""
+                )
+                println("threat: " + if (myResult.get("threat") != null) myResult.get("threat").asString else "")
+                println(
+                    "isProxy: " + if (myResult.get("isProxy") != null) myResult.get("isProxy").asString else ""
+                )
+                println(
+                    "provider: " + if (myResult.get("provider") != null) myResult.get("provider").asString else ""
+                )
+            } else if (myResult.get("response") != null) {
+                println("Error: " + myResult.get("response").asString);
+            }
+
+            myResult = ws.getCredit();
+
+            if (myResult.get("response") != null) {
+                println("Credit balance: " + myResult.get("response").asString);
+            }
         } catch (Ex: Exception) {
             println(Ex)
         }
