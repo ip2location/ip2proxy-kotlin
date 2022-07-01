@@ -1,5 +1,8 @@
 import kotlin.jvm.JvmStatic
 import java.lang.Exception
+// import java.nio.file.Files
+// import java.nio.file.Path
+// import java.nio.file.Paths
 
 object Main {
     @JvmStatic
@@ -22,11 +25,15 @@ object Main {
             val threat: String?
             val provider: String?
             val ip = "221.121.146.0"
-            if (proxy.open(
-                    "./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER.BIN",
-                    IP2Proxy.IOModes.IP2PROXY_MEMORY_MAPPED
-                ) == 0
-            ) {
+
+            // querying with the BIN file
+            val dbPath =
+                "./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER.BIN"
+
+            // val binPath: Path = Paths.get(dbPath)
+            // val binFileBytes = Files.readAllBytes(binPath)
+            // if (proxy.open(binFileBytes) == 0) { // this is to initialize with byte array
+            if (proxy.open(dbPath, IP2Proxy.IOModes.IP2PROXY_MEMORY_MAPPED) == 0) { // this is to initialize with a BIN file
                 println("GetModuleVersion: " + proxy.getModuleVersion())
                 println("GetPackageVersion: " + proxy.getPackageVersion())
                 println("GetDatabaseVersion: " + proxy.getDatabaseVersion())
