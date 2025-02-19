@@ -13,4 +13,5 @@ class ProxyResult internal constructor() {
     var lastSeen: String? = null
     var threat: String? = null
     var provider: String? = null
+    var fraudScore: String? = null
 }

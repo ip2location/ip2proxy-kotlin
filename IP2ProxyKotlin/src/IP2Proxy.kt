@@ -19,7 +19,7 @@ class IP2Proxy {
     }
 
     enum class Modes {
-        COUNTRY_SHORT, COUNTRY_LONG, REGION, CITY, ISP, PROXY_TYPE, IS_PROXY, DOMAIN, USAGE_TYPE, ASN, AS, LAST_SEEN, THREAT, PROVIDER, ALL
+        COUNTRY_SHORT, COUNTRY_LONG, REGION, CITY, ISP, PROXY_TYPE, IS_PROXY, DOMAIN, USAGE_TYPE, ASN, AS, LAST_SEEN, THREAT, PROVIDER, FRAUD_SCORE, ALL
     }
 
     private var ipV4Buffer: MappedByteBuffer? = null
@@ -64,6 +64,7 @@ class IP2Proxy {
     private var lastSeenPositionOffset = 0
     private var threatPositionOffset = 0
     private var providerPositionOffset = 0
+    private var fraudScorePositionOffset = 0
     private var countryEnabled = false
     private var regionEnabled = false
     private var cityEnabled = false
@@ -76,6 +77,7 @@ class IP2Proxy {
     private var lastSeenEnabled = false
     private var threatEnabled = false
     private var providerEnabled = false
+    private var fraudScoreEnabled = false
 
     internal interface FileLike {
         interface Supplier {
@@ -266,6 +268,16 @@ class IP2Proxy {
     }
 
     /**
+     * This function returns the fraud score of the IP.
+     * @param IP IP Address you wish to query
+     * @return fraud score of the IP
+     */
+    @Throws(IOException::class)
+    fun getFraudScore(IP: String?): String? {
+        return proxyQuery(IP, Modes.FRAUD_SCORE).fraudScore
+    }
+
+    /**
      * This function returns proxy result.
      * @param IP IP Address you wish to query
      * @return Proxy result
@@ -397,6 +409,7 @@ class IP2Proxy {
                 lastSeenPositionOffset = if (LASTSEEN_POSITION[dbType] != 0) LASTSEEN_POSITION[dbType] - 2 shl 2 else 0
                 threatPositionOffset = if (THREAT_POSITION[dbType] != 0) THREAT_POSITION[dbType] - 2 shl 2 else 0
                 providerPositionOffset = if (PROVIDER_POSITION[dbType] != 0) PROVIDER_POSITION[dbType] - 2 shl 2 else 0
+                fraudScorePositionOffset = if (FRAUDSCORE_POSITION[dbType] != 0) FRAUDSCORE_POSITION[dbType] - 2 shl 2 else 0
                 countryEnabled = COUNTRY_POSITION[dbType] != 0
                 regionEnabled = REGION_POSITION[dbType] != 0
                 cityEnabled = CITY_POSITION[dbType] != 0
@@ -409,6 +422,7 @@ class IP2Proxy {
                 lastSeenEnabled = LASTSEEN_POSITION[dbType] != 0
                 threatEnabled = THREAT_POSITION[dbType] != 0
                 providerEnabled = PROVIDER_POSITION[dbType] != 0
+                fraudScoreEnabled = FRAUDSCORE_POSITION[dbType] != 0
                 var readLen: Int = indexArrayIPV4.size
                 if (indexedIPV6) {
                     readLen += indexArrayIPV6.size
@@ -590,6 +604,7 @@ class IP2Proxy {
                 result.lastSeen = MSG_INVALID_IP
                 result.threat = MSG_INVALID_IP
                 result.provider = MSG_INVALID_IP
+                result.fraudScore = MSG_INVALID_IP
                 return result
             }
             var ipNo: BigInteger
@@ -631,6 +646,7 @@ class IP2Proxy {
                 result.lastSeen = MSG_INVALID_IP
                 result.threat = MSG_INVALID_IP
                 result.provider = MSG_INVALID_IP
+                result.fraudScore = MSG_INVALID_IP
                 return result
             }
             var pos: Long = 0
@@ -657,6 +673,7 @@ class IP2Proxy {
                     result.lastSeen = MSG_MISSING_FILE
                     result.threat = MSG_MISSING_FILE
                     result.provider = MSG_MISSING_FILE
+                    result.fraudScore = MSG_MISSING_FILE
                     return result
                 }
             }
@@ -699,6 +716,7 @@ class IP2Proxy {
                     result.lastSeen = MSG_IPV6_UNSUPPORTED
                     result.threat = MSG_IPV6_UNSUPPORTED
                     result.provider = MSG_IPV6_UNSUPPORTED
+                    result.fraudScore = MSG_IPV6_UNSUPPORTED
                     return result
                 }
                 maxIPRange = MAX_IPV6_RANGE
@@ -750,6 +768,7 @@ class IP2Proxy {
                     var lastSeen: String? = MSG_NOT_SUPPORTED
                     var threat: String? = MSG_NOT_SUPPORTED
                     var provider: String? = MSG_NOT_SUPPORTED
+                    var fraudScore: String? = MSG_NOT_SUPPORTED
 
                     val rowLen: Int = columnSize - firstCol
 
@@ -829,6 +848,11 @@ class IP2Proxy {
                             provider = readStr(read32Row(row, providerPositionOffset).toLong(), dataBuf, rF)
                         }
                     }
+                    if (fraudScoreEnabled) {
+                        if (Mode == Modes.ALL || Mode == Modes.FRAUD_SCORE) {
+                            fraudScore = readStr(read32Row(row, fraudScorePositionOffset).toLong(), dataBuf, rF)
+                        }
+                    }
                     isProxy = if (countryShort == "-" || proxyType == "-") {
                         0
                     } else {
@@ -852,6 +876,7 @@ class IP2Proxy {
                     result.lastSeen = lastSeen
                     result.threat = threat
                     result.provider = provider
+                    result.fraudScore = fraudScore
                     return result
                 } else {
                     if (ipNo < ipFrom) {
@@ -875,6 +900,7 @@ class IP2Proxy {
             result.lastSeen = MSG_INVALID_IP
             result.threat = MSG_INVALID_IP
             result.provider = MSG_INVALID_IP
+            result.fraudScore = MSG_INVALID_IP
             result
         } finally {
             rF?.close()
@@ -1269,18 +1295,19 @@ class IP2Proxy {
         private const val MSG_INVALID_IP = "INVALID IP ADDRESS"
         private const val MSG_MISSING_FILE = "MISSING FILE"
         private const val MSG_IPV6_UNSUPPORTED = "IPV6 ADDRESS MISSING IN IPV4 BIN"
-        private val COUNTRY_POSITION = intArrayOf(0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3)
-        private val REGION_POSITION = intArrayOf(0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4)
-        private val CITY_POSITION = intArrayOf(0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5)
-        private val ISP_POSITION = intArrayOf(0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6)
-        private val PROXYTYPE_POSITION = intArrayOf(0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
-        private val DOMAIN_POSITION = intArrayOf(0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7)
-        private val USAGETYPE_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8)
-        private val ASN_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9)
-        private val AS_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10)
-        private val LASTSEEN_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11)
-        private val THREAT_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12)
-        private val PROVIDER_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13)
-        private const val ModuleVersion = "3.3.0"
+        private val COUNTRY_POSITION = intArrayOf(0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3)
+        private val REGION_POSITION = intArrayOf(0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4)
+        private val CITY_POSITION = intArrayOf(0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
+        private val ISP_POSITION = intArrayOf(0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6)
+        private val PROXYTYPE_POSITION = intArrayOf(0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
+        private val DOMAIN_POSITION = intArrayOf(0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7, 7)
+        private val USAGETYPE_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8, 8)
+        private val ASN_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9, 9)
+        private val AS_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10, 10)
+        private val LASTSEEN_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 11, 11, 11, 11, 11)
+        private val THREAT_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12, 12)
+        private val PROVIDER_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 13)
+        private val FRAUDSCORE_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14)
+        private const val ModuleVersion = "3.4.0"
     }
 }

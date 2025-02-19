@@ -39,6 +39,7 @@ Below are the methods supported in this module.
 |getLastSeen|Return the number of days that the proxy was last seen.|
 |getThreat|Return the threat type of the proxy.|
 |getProvider|Return the provider of the proxy.|
+|getFraudScore|Return the potential risk score (0 - 99) associated with IP address.|
 
 ## Usage
 
@@ -71,8 +72,9 @@ object Main {
             val lastSeen: String?
             val threat: String?
             val provider: String?
+            val fraudScore: String?
             val ip = "221.121.146.0"
-            if (proxy.open("./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER.BIN", IP2Proxy.IOModes.IP2PROXY_MEMORY_MAPPED) == 0) {
+            if (proxy.open("./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER-FRAUDSCORE.BIN", IP2Proxy.IOModes.IP2PROXY_MEMORY_MAPPED) == 0) {
                 println("GetModuleVersion: " + proxy.getModuleVersion())
                 println("GetPackageVersion: " + proxy.getPackageVersion())
                 println("GetDatabaseVersion: " + proxy.getDatabaseVersion())
@@ -93,6 +95,7 @@ object Main {
                 println("lastSeen: " + all.lastSeen)
                 println("threat: " + all.threat)
                 println("provider: " + all.provider)
+                println("fraudScore: " + all.fraudScore)
 
                 // reading individual fields
                 isProxy = proxy.isProxy(ip)
@@ -123,6 +126,8 @@ object Main {
                 println("threat: $threat")
                 provider = proxy.getProvider(ip)
                 println("provider: $provider")
+                fraudScore = proxy.getFraudScore(ip)
+                println("fraudScore: $fraudScore")
             } else {
                 println("Error reading BIN file.")
             }

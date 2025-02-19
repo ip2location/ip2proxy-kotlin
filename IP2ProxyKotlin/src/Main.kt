@@ -24,11 +24,12 @@ object Main {
             val lastSeen: String?
             val threat: String?
             val provider: String?
-            val ip = "221.121.146.0"
+            val fraudScore: String?
+            val ip = "197.85.191.64"
 
             // querying with the BIN file
             val dbPath =
-                "./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER.BIN"
+                "./IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL-PROVIDER-FRAUDSCORE.BIN"
 
             // val binPath: Path = Paths.get(dbPath)
             // val binFileBytes = Files.readAllBytes(binPath)
@@ -54,6 +55,7 @@ object Main {
                 println("lastSeen: " + all.lastSeen)
                 println("threat: " + all.threat)
                 println("provider: " + all.provider)
+                println("fraudScore: " + all.fraudScore)
 
                 // reading individual fields
                 isProxy = proxy.isProxy(ip)
@@ -73,17 +75,19 @@ object Main {
                 domain = proxy.getDomain(ip)
                 println("domain: $domain")
                 usageType = proxy.getUsageType(ip)
-                println("UsageType: $usageType")
+                println("usageType: $usageType")
                 aSN = proxy.getASN(ip)
                 println("aSN: $aSN")
                 `as` = proxy.getAS(ip)
                 println("`as`: $`as`")
                 lastSeen = proxy.getLastSeen(ip)
-                println("LastSeen: $lastSeen")
+                println("lastSeen: $lastSeen")
                 threat = proxy.getThreat(ip)
                 println("threat: $threat")
                 provider = proxy.getProvider(ip)
                 println("provider: $provider")
+                fraudScore = proxy.getFraudScore(ip)
+                println("fraudScore: $fraudScore")
             } else {
                 println("Error reading BIN file.")
             }
@@ -92,6 +96,7 @@ object Main {
             println(Ex)
         }
 
+        /*
         println("==============================================================================")
         try {
             val ws = IP2ProxyWebService()
@@ -155,5 +160,6 @@ object Main {
         } catch (Ex: Exception) {
             println(Ex)
         }
+         */
     }
 }
