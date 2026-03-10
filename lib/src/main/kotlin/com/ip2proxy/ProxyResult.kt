@@ -1,3 +1,5 @@
+package com.ip2proxy
+
 class ProxyResult internal constructor() {
     var isProxy = 0
     var proxyType: String? = null

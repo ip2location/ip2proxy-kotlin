@@ -1,3 +1,5 @@
+package com.ip2proxy
+
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -10,7 +12,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
-import java.util.*
+import java.util.Locale.getDefault
 import java.util.regex.Pattern
 
 class IP2Proxy {
@@ -128,7 +130,7 @@ class IP2Proxy {
     }
 
     /**
-     * This function returns ans integer to state if it proxy.
+     * This function returns an integer to state if it is a proxy.
      * @param IP IP Address you wish to query
      * @return -1 if error, 0 if not a proxy, 1 if proxy except DCH and SES, 2 if proxy and either DCH or SES
      */
@@ -631,7 +633,7 @@ class IP2Proxy {
                     retArr = expandIPV6(ipAddress, ipType)
                     ipType = retArr[1].toInt()
                 }
-            } catch (ex: UnknownHostException) {
+            } catch (_: UnknownHostException) {
                 result.isProxy = -1
                 result.proxyType = MSG_INVALID_IP
                 result.countryShort = MSG_INVALID_IP
@@ -683,7 +685,7 @@ class IP2Proxy {
                 }
             } else {
                 destroyMappedBytes()
-                rF = binFile!!.open();
+                rF = binFile!!.open()
             }
             if (ipType == 4) { // IPv4
                 maxIPRange = MAX_IPV4_RANGE
@@ -700,7 +702,7 @@ class IP2Proxy {
                 low = indexArrayIPV4[indexAddr][0].toLong()
                 high = indexArrayIPV4[indexAddr][1].toLong()
             } else { // IPv6
-                firstCol = 16; // IPv6 is 16 bytes
+                firstCol = 16 // IPv6 is 16 bytes
                 if (dbCountIPV6 == 0) {
                     result.isProxy = -1
                     result.proxyType = MSG_IPV6_UNSUPPORTED
@@ -753,7 +755,7 @@ class IP2Proxy {
                     ipFrom = read32Or128Row(fullRow, 0, firstCol)
                     ipTo = if (overCapacity) BigInteger.ZERO else read32Or128Row(fullRow, columnSize, firstCol)
                 }
-                if (ipNo >= ipFrom && ipNo < ipTo) {
+                if (ipNo in ipFrom..<ipTo) {
                     val isProxy: Int
                     var proxyType: String? = MSG_NOT_SUPPORTED
                     var countryShort: String? = MSG_NOT_SUPPORTED
@@ -911,7 +913,7 @@ class IP2Proxy {
         val tmp = "0000:0000:0000:0000:0000:"
         val padMe = "0000"
         val hexOffset: Long = 0xFF
-        var ip2 = IP.uppercase(Locale.getDefault())
+        var ip2 = IP.uppercase(getDefault())
         var retType = IPType.toString()
         if (IPType == 4) {
             if (Pattern4.matcher(ip2).matches()) {
@@ -970,7 +972,7 @@ class IP2Proxy {
                     bf.append(":")
                     bf.append(padMe.substring(part2Hex.length))
                     bf.append(part2Hex)
-                    ip2 = bf.toString().toUpperCase()
+                    ip2 = bf.toString().uppercase(getDefault())
                     val arr = ip2.split("::".toRegex()).toTypedArray()
                     val leftSide = arr[0].split(":".toRegex()).toTypedArray()
                     val bf2 = StringBuilder(40)
@@ -1204,7 +1206,7 @@ class IP2Proxy {
                 len = data[0].toInt()
                 buf = ByteArray(len)
                 System.arraycopy(data, 1, buf, 0, len)
-            } catch (e: NegativeArraySizeException) {
+            } catch (_: NegativeArraySizeException) {
                 return null
             }
         } else {
@@ -1214,7 +1216,7 @@ class IP2Proxy {
                 len = data[0].toInt()
                 buf = ByteArray(len)
                 System.arraycopy(data, 1, buf, 0, len)
-            } catch (e: NegativeArraySizeException) {
+            } catch (_: NegativeArraySizeException) {
                 return null
             }
         }
@@ -1308,6 +1310,6 @@ class IP2Proxy {
         private val THREAT_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12, 12)
         private val PROVIDER_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 13)
         private val FRAUDSCORE_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14)
-        private const val ModuleVersion = "3.4.0"
+        private const val ModuleVersion = "3.5.0"
     }
 }

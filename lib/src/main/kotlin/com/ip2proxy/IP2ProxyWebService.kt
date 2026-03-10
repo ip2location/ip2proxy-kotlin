@@ -1,3 +1,5 @@
+package com.ip2proxy
+
 import com.google.gson.*
 import java.lang.IllegalArgumentException
 import java.net.URL
