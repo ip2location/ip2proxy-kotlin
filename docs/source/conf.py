@@ -4,11 +4,11 @@
 # -- Project information
 
 project = 'IP2Proxy Kotlin'
-copyright = '2025, IP2Location'
+copyright = '2026, IP2Location'
 author = 'IP2Location'
 
-release = '0.1.0'
-version = '0.1.0'
+release = '3.5.0'
+version = '3.5.0'
 
 # -- General configuration
 
@@ -57,4 +57,4 @@ html_favicon = 'images/favicon.ico'
 
 html_title = "IP2Proxy Kotlin"
 
-# html_baseurl = "https://ip2proxy-java.readthedocs.io/en/latest/"
+# html_baseurl = "https://ip2proxy-kotlin.readthedocs.io/en/latest/"
