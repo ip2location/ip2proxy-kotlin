@@ -132,7 +132,7 @@ class IP2Proxy {
     /**
      * This function returns an integer to state if it is a proxy.
      * @param IP IP Address you wish to query
-     * @return -1 if error, 0 if not a proxy, 1 if proxy except DCH and SES, 2 if proxy and either DCH or SES
+     * @return -1 if error, 0 if not a proxy, 1 if proxy except DCH and SES and AIC, 2 if proxy and either DCH or SES or AIC
      */
     @Throws(IOException::class)
     fun isProxy(IP: String?): Int {
@@ -858,7 +858,7 @@ class IP2Proxy {
                     isProxy = if (countryShort == "-" || proxyType == "-") {
                         0
                     } else {
-                        if (proxyType == "DCH" || proxyType == "SES") {
+                        if (proxyType == "DCH" || proxyType == "SES" || proxyType == "AIC") {
                             2
                         } else {
                             1
@@ -1310,6 +1310,6 @@ class IP2Proxy {
         private val THREAT_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12, 12)
         private val PROVIDER_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 13)
         private val FRAUDSCORE_POSITION = intArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14)
-        private const val ModuleVersion = "3.5.0"
+        private const val ModuleVersion = "3.6.0"
     }
 }

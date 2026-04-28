@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     id("com.vanniktech.maven.publish") version "0.36.0"
-    id("org.jetbrains.dokka") version "2.1.0"
+    id("org.jetbrains.dokka") version "2.2.0"
     `java-library`
     id("signing")
 }
@@ -12,18 +12,18 @@ repositories {
 
 dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test")
-    api("com.google.code.gson:gson:2.13.2")
+    api("com.google.code.gson:gson:2.14.0")
 }
 
 mavenPublishing {
     configureBasedOnAppliedPlugins()
-    coordinates("com.ip2proxy", "ip2proxy-kotlin", "3.5.0")
+    coordinates("com.ip2proxy", "ip2proxy-kotlin", "3.6.0")
     publishToMavenCentral()
     signAllPublications()
 
     pom {
         name.set("IP2Proxy Kotlin")
-        description.set("IP2Proxy Kotlin Library can be used to find the IP addresses which are used as VPN anonymizer, open proxies, web proxies, Tor exits, data center, web hosting (DCH) range, search engine robots (SES) and residential (RES).")
+        description.set("IP2Proxy Kotlin Library can be used to find the IP addresses which are used as VPN anonymizer, open proxies, web proxies, Tor exits, data center, web hosting (DCH) range, search engine robots (SES), AI crawlers (AIC) and residential (RES).")
         inceptionYear.set("2026")
         url.set("https://github.com/ip2location/ip2proxy-kotlin")
         licenses {
